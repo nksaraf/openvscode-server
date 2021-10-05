@@ -50,7 +50,7 @@ _Note_: Feel free to use the `nightly` tag to test the latest version, i.e. `git
 	```bash
 	tar -xzf openvscode-server-v${OPENVSCODE_SERVER_VERSION}.tar.gz
 	cd openvscode-server-v${OPENVSCODE_SERVER_VERSION}
-	./server.sh
+	./server.sh --port 3000
 	```
 - Visit [localhost:3000](http://localhost:3000).
 
