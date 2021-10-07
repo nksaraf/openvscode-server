@@ -6,7 +6,6 @@
 
 import crypto from 'crypto';
 import * as vscode from 'vscode';
-import { URL, URLSearchParams } from 'url';
 const create = require('pkce').create;
 
 import { GitpodClient, GitpodServer, GitpodServiceImpl } from '@gitpod/gitpod-protocol/lib/gitpod-service';
@@ -241,25 +240,31 @@ export async function checkScopes(accessToken: string): Promise<string[]> {
 
 /**
  * Creates a URL to be opened for the whole Oauth2 flow to kick off
- * @returns a `URL` object containing the whole auth URL
+ * @returns a `URL` string containing the whole auth URL
  */
-function createOauth2URL(options: { authorizationURI: string, clientID: string, redirectURI: string, scopes: string[] }): URL {
+function createOauth2URL(options: { authorizationURI: string, clientID: string, redirectURI: vscode.Uri, scopes: string[] }): string {
 	const { authorizationURI, clientID, redirectURI, scopes } = options;
 	const { codeChallenge }: { codeChallenge: string, codeVerifier: string } = create();
-	const baseURL = new URL(authorizationURI);
-	const sp = new URLSearchParams();
 
-	sp.set('client_id', clientID);
-	sp.set('redirect_uri', redirectURI);
-	sp.set('response_type', 'code');
-	sp.set('state', '');
-	sp.set('scope', scopes.join(' '));
-	sp.set('code_challenge', codeChallenge);
-	sp.set('code_challenge_method', 'S256');
+	let url = authorizationURI;
+	function set(field: string, value: string): void {
+		if (url.includes('?')) {
+			url += '&';
+		} else {
+			url += '?';
+		}
+		url += `&${field}=${encodeURIComponent(value)}`;
+	}
 
-	baseURL.search = sp.toString();
+	set('client_id', clientID);
+	set('redirect_uri', redirectURI.toString());
+	set('response_type', 'code');
+	set('state', '');
+	set('scope', scopes.join(' '));
+	set('code_challenge', codeChallenge);
+	set('code_challenge_method', 'S256');
 
-	return baseURL;
+	return url;
 }
 
 /**
@@ -326,7 +331,7 @@ export function registerAuth(context: vscode.ExtensionContext, logger: (value: s
 	context.subscriptions.push(addCmd);
 
 	async function createSession(scopes: readonly string[]): Promise<vscode.AuthenticationSession> {
-		const callbackUri = `${vscode.env.uriScheme}://gitpod.gitpod-desktop/complete-gitpod-auth`;
+		const callbackUri = await vscode.env.asExternalUri(vscode.Uri.parse(`${vscode.env.uriScheme}://gitpod.gitpod-desktop/complete-gitpod-auth`));
 
 		if (![...gitpodScopes].every((scope) => scopes.includes(scope))) {
 			vscode.window.showErrorMessage('The provided scopes are not enough to turn on Settings Sync');
@@ -345,10 +350,9 @@ export function registerAuth(context: vscode.ExtensionContext, logger: (value: s
 				reject('Login timed out.');
 			}, 1000 * 60 * 5); // 5 minutes
 		});
-		console.log(gitpodAuth);
 		// Open the authorization URL in the default browser
-		const authURI = vscode.Uri.from({ scheme: gitpodAuth.protocol.slice(0, -1), authority: gitpodAuth.hostname, path: gitpodAuth.pathname, query: gitpodAuth.search.slice(1) });
-		logger(`Opening browser at ${authURI.toString(true)}`);
+		const authURI = vscode.Uri.parse(gitpodAuth);
+
 		const opened = await vscode.env.openExternal(authURI);
 		if (!opened) {
 			const selected = await vscode.window.showErrorMessage(`Couldn't open ${authURI.toString(true)} automatically, please copy and paste it to your browser manually.`, 'Copy', 'Cancel');
