@@ -15,7 +15,7 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 import { ConsoleLogger, listen as doListen } from 'vscode-ws-jsonrpc';
 
 export const authCompletePath = '/auth-complete';
-const baseURL = 'https://server-vscode-ouath2.staging.gitpod-dev.com';
+const baseURL = vscode.workspace.getConfiguration('gitpod').get('authOrigin', 'https://gitpod.io');
 
 type UsedGitpodFunction = ['getLoggedInUser', 'getGitpodTokenScopes'];
 type Union<Tuple extends any[], Union = never> = Tuple[number] | Union;
@@ -116,6 +116,31 @@ const newConfig = {
 	}
 };
 
+/**
+ * Checks all stored auth sessions and returns all valid ones
+ * @param context the VS Code extension context from which to get the sessions from
+ * @param scopes optionally, you can specify scopes to check against
+ * @returns a list of sessions which are valid
+ */
+async function getValidSessions(context: vscode.ExtensionContext, scopes?: readonly string[]): Promise<vscode.AuthenticationSession[]> {
+	const existingSessionsJSON = await context.secrets.get('gitpod.authSessions') || '[]';
+	const sessions: vscode.AuthenticationSession[] = JSON.parse(existingSessionsJSON);
+	let index = 0;
+	for (const session of sessions) {
+		const availableScopes = await checkScopes(session.accessToken);
+		if (!(scopes || [...gitpodScopes]).every((scope) => availableScopes.includes(scope))) {
+			vscode.window.showErrorMessage('Token invalid.');
+			delete sessions[index++];
+		}
+	}
+	const newSessionsJSON = JSON.stringify(sessions);
+	await context.secrets.store('gitpod.authSessions', newSessionsJSON);
+	if (sessions.length === 0) {
+		vscode.window.showErrorMessage('Your login session with Gitpod has expired. You need to sign in again.');
+	}
+	return sessions;
+}
+
 function updateSyncContext() {
 	const config = vscode.workspace.getConfiguration();
 	const syncConfig = config.get('configurationSync.store');
@@ -215,16 +240,6 @@ export async function resolveAuthenticationSession(scopes: readonly string[], ac
 		scopes: scopes,
 		accessToken: accessToken
 	};
-}
-
-/**
- * Checks if a authentication session includes the provided scopes
- * @param session a VS Code authentication session
- * @param scopes scopes to look for
- * @returns a boolean value indicating whether the scopes match or not
- */
-function hasScopes(session: vscode.AuthenticationSession, scopes?: readonly string[]): boolean {
-	return !scopes || scopes.every(scope => session.scopes.includes(scope));
 }
 
 /**
@@ -370,22 +385,16 @@ export function registerAuth(context: vscode.ExtensionContext, logger: (value: s
 	context.subscriptions.push(vscode.authentication.registerAuthenticationProvider('gitpod', 'Gitpod', {
 		onDidChangeSessions: onDidChangeSessionsEmitter.event,
 		getSessions: async (scopes: string[]) => {
-			const sessions: vscode.AuthenticationSession[] = [];
-			if (!scopes) {
-				return Promise.resolve(sessions);
-			}
-			const storedSessionsJSON = await context.secrets.get('gitpod.authSessions') || '[]';
-			const storedSessions: vscode.AuthenticationSession[] = JSON.parse(storedSessionsJSON);
-			for (const session of storedSessions) {
-				sessions.push(session);
-			}
-			return Promise.resolve(sessions.filter(session => hasScopes(session, scopes)));
+			return getValidSessions(context, scopes);
 		},
 		createSession: async (scopes: string[]) => {
 			return createSession(scopes);
 		},
-		removeSession: async () => {
-			await context.secrets.delete('gitpod.authSessions');
+		removeSession: async (sessionId) => {
+			const sessions = getValidSessions(context);
+			const filteredSessions = (await sessions).filter((session) => session.id !== sessionId);
+			const newSessionsJSON = JSON.stringify(filteredSessions);
+			await context.secrets.store('gitpod.authSessions', newSessionsJSON);
 		},
 	}, { supportsMultipleAccounts: false }));
 	logger('Pushed auth');
