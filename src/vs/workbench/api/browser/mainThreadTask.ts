@@ -26,16 +26,12 @@ import { ITaskService, TaskFilter, ITaskProvider } from 'vs/workbench/contrib/ta
 
 import { extHostNamedCustomer } from 'vs/workbench/api/common/extHostCustomers';
 import { ExtHostContext, MainThreadTaskShape, ExtHostTaskShape, MainContext, IExtHostContext } from 'vs/workbench/api/common/extHost.protocol';
-import {
-	TaskDefinitionDTO, TaskExecutionDTO, ProcessExecutionOptionsDTO, TaskPresentationOptionsDTO,
-	ProcessExecutionDTO, ShellExecutionDTO, ShellExecutionOptionsDTO, CustomExecutionDTO, TaskDTO, TaskSourceDTO, TaskHandleDTO, TaskFilterDTO, TaskProcessStartedDTO, TaskProcessEndedDTO, TaskSystemInfoDTO,
-	RunOptionsDTO
-} from 'vs/workbench/api/common/shared/tasks';
+import * as tasks from 'vs/workbench/api/common/shared/tasks';
 import { IConfigurationResolverService } from 'vs/workbench/services/configurationResolver/common/configurationResolver';
 import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
 
 namespace TaskExecutionDTO {
-	export function from(value: TaskExecution): TaskExecutionDTO {
+	export function from(value: TaskExecution): tasks.TaskExecutionDTO {
 		return {
 			id: value.id,
 			task: TaskDTO.from(value.task)
@@ -44,7 +40,7 @@ namespace TaskExecutionDTO {
 }
 
 namespace TaskProcessStartedDTO {
-	export function from(value: TaskExecution, processId: number): TaskProcessStartedDTO {
+	export function from(value: TaskExecution, processId: number): tasks.TaskProcessStartedDTO {
 		return {
 			id: value.id,
 			processId
@@ -53,7 +49,7 @@ namespace TaskProcessStartedDTO {
 }
 
 namespace TaskProcessEndedDTO {
-	export function from(value: TaskExecution, exitCode: number | undefined): TaskProcessEndedDTO {
+	export function from(value: TaskExecution, exitCode: number | undefined): tasks.TaskProcessEndedDTO {
 		return {
 			id: value.id,
 			exitCode
@@ -62,12 +58,12 @@ namespace TaskProcessEndedDTO {
 }
 
 namespace TaskDefinitionDTO {
-	export function from(value: KeyedTaskIdentifier): TaskDefinitionDTO {
+	export function from(value: KeyedTaskIdentifier): tasks.TaskDefinitionDTO {
 		const result = Object.assign(Object.create(null), value);
 		delete result._key;
 		return result;
 	}
-	export function to(value: TaskDefinitionDTO, executeOnly: boolean): KeyedTaskIdentifier | undefined {
+	export function to(value: tasks.TaskDefinitionDTO, executeOnly: boolean): KeyedTaskIdentifier | undefined {
 		let result = TaskDefinition.createTaskIdentifier(value, console);
 		if (result === undefined && executeOnly) {
 			result = {
@@ -80,13 +76,13 @@ namespace TaskDefinitionDTO {
 }
 
 namespace TaskPresentationOptionsDTO {
-	export function from(value: PresentationOptions | undefined): TaskPresentationOptionsDTO | undefined {
+	export function from(value: PresentationOptions | undefined): tasks.TaskPresentationOptionsDTO | undefined {
 		if (value === undefined || value === null) {
 			return undefined;
 		}
 		return Object.assign(Object.create(null), value);
 	}
-	export function to(value: TaskPresentationOptionsDTO | undefined): PresentationOptions {
+	export function to(value: tasks.TaskPresentationOptionsDTO | undefined): PresentationOptions {
 		if (value === undefined || value === null) {
 			return PresentationOptions.defaults;
 		}
@@ -95,13 +91,13 @@ namespace TaskPresentationOptionsDTO {
 }
 
 namespace RunOptionsDTO {
-	export function from(value: RunOptions): RunOptionsDTO | undefined {
+	export function from(value: RunOptions): tasks.RunOptionsDTO | undefined {
 		if (value === undefined || value === null) {
 			return undefined;
 		}
 		return Object.assign(Object.create(null), value);
 	}
-	export function to(value: RunOptionsDTO | undefined): RunOptions {
+	export function to(value: tasks.RunOptionsDTO | undefined): RunOptions {
 		if (value === undefined || value === null) {
 			return RunOptions.defaults;
 		}
@@ -110,7 +106,7 @@ namespace RunOptionsDTO {
 }
 
 namespace ProcessExecutionOptionsDTO {
-	export function from(value: CommandOptions): ProcessExecutionOptionsDTO | undefined {
+	export function from(value: CommandOptions): tasks.ProcessExecutionOptionsDTO | undefined {
 		if (value === undefined || value === null) {
 			return undefined;
 		}
@@ -119,7 +115,7 @@ namespace ProcessExecutionOptionsDTO {
 			env: value.env
 		};
 	}
-	export function to(value: ProcessExecutionOptionsDTO | undefined): CommandOptions {
+	export function to(value: tasks.ProcessExecutionOptionsDTO | undefined): CommandOptions {
 		if (value === undefined || value === null) {
 			return CommandOptions.defaults;
 		}
@@ -131,14 +127,14 @@ namespace ProcessExecutionOptionsDTO {
 }
 
 namespace ProcessExecutionDTO {
-	export function is(value: ShellExecutionDTO | ProcessExecutionDTO | CustomExecutionDTO): value is ProcessExecutionDTO {
-		const candidate = value as ProcessExecutionDTO;
+	export function is(value: tasks.ShellExecutionDTO | tasks.ProcessExecutionDTO | tasks.CustomExecutionDTO): value is tasks.ProcessExecutionDTO {
+		const candidate = value as tasks.ProcessExecutionDTO;
 		return candidate && !!candidate.process;
 	}
-	export function from(value: CommandConfiguration): ProcessExecutionDTO {
+	export function from(value: CommandConfiguration): tasks.ProcessExecutionDTO {
 		const process: string = Types.isString(value.name) ? value.name : value.name!.value;
 		const args: string[] = value.args ? value.args.map(value => Types.isString(value) ? value : value.value) : [];
-		const result: ProcessExecutionDTO = {
+		const result: tasks.ProcessExecutionDTO = {
 			process: process,
 			args: args
 		};
@@ -147,7 +143,7 @@ namespace ProcessExecutionDTO {
 		}
 		return result;
 	}
-	export function to(value: ProcessExecutionDTO): CommandConfiguration {
+	export function to(value: tasks.ProcessExecutionDTO): CommandConfiguration {
 		const result: CommandConfiguration = {
 			runtime: RuntimeType.Process,
 			name: value.process,
@@ -160,11 +156,11 @@ namespace ProcessExecutionDTO {
 }
 
 namespace ShellExecutionOptionsDTO {
-	export function from(value: CommandOptions): ShellExecutionOptionsDTO | undefined {
+	export function from(value: CommandOptions): tasks.ShellExecutionOptionsDTO | undefined {
 		if (value === undefined || value === null) {
 			return undefined;
 		}
-		const result: ShellExecutionOptionsDTO = {
+		const result: tasks.ShellExecutionOptionsDTO = {
 			cwd: value.cwd || CommandOptions.defaults.cwd,
 			env: value.env
 		};
@@ -175,7 +171,7 @@ namespace ShellExecutionOptionsDTO {
 		}
 		return result;
 	}
-	export function to(value: ShellExecutionOptionsDTO): CommandOptions | undefined {
+	export function to(value: tasks.ShellExecutionOptionsDTO): CommandOptions | undefined {
 		if (value === undefined || value === null) {
 			return undefined;
 		}
@@ -199,12 +195,12 @@ namespace ShellExecutionOptionsDTO {
 }
 
 namespace ShellExecutionDTO {
-	export function is(value: ShellExecutionDTO | ProcessExecutionDTO | CustomExecutionDTO): value is ShellExecutionDTO {
-		const candidate = value as ShellExecutionDTO;
+	export function is(value: tasks.ShellExecutionDTO | tasks.ProcessExecutionDTO | tasks.CustomExecutionDTO): value is tasks.ShellExecutionDTO {
+		const candidate = value as tasks.ShellExecutionDTO;
 		return candidate && (!!candidate.commandLine || !!candidate.command);
 	}
-	export function from(value: CommandConfiguration): ShellExecutionDTO {
-		const result: ShellExecutionDTO = {};
+	export function from(value: CommandConfiguration): tasks.ShellExecutionDTO {
+		const result: tasks.ShellExecutionDTO = {};
 		if (value.name && Types.isString(value.name) && (value.args === undefined || value.args === null || value.args.length === 0)) {
 			result.commandLine = value.name;
 		} else {
@@ -216,7 +212,7 @@ namespace ShellExecutionDTO {
 		}
 		return result;
 	}
-	export function to(value: ShellExecutionDTO): CommandConfiguration {
+	export function to(value: tasks.ShellExecutionDTO): CommandConfiguration {
 		const result: CommandConfiguration = {
 			runtime: RuntimeType.Shell,
 			name: value.commandLine ? value.commandLine : value.command,
@@ -231,18 +227,18 @@ namespace ShellExecutionDTO {
 }
 
 namespace CustomExecutionDTO {
-	export function is(value: ShellExecutionDTO | ProcessExecutionDTO | CustomExecutionDTO): value is CustomExecutionDTO {
-		const candidate = value as CustomExecutionDTO;
+	export function is(value: tasks.ShellExecutionDTO | tasks.ProcessExecutionDTO | tasks.CustomExecutionDTO): value is tasks.CustomExecutionDTO {
+		const candidate = value as tasks.CustomExecutionDTO;
 		return candidate && candidate.customExecution === 'customExecution';
 	}
 
-	export function from(value: CommandConfiguration): CustomExecutionDTO {
+	export function from(value: CommandConfiguration): tasks.CustomExecutionDTO {
 		return {
 			customExecution: 'customExecution'
 		};
 	}
 
-	export function to(value: CustomExecutionDTO): CommandConfiguration {
+	export function to(value: tasks.CustomExecutionDTO): CommandConfiguration {
 		return {
 			runtime: RuntimeType.CustomExecution,
 			presentation: undefined
@@ -251,8 +247,8 @@ namespace CustomExecutionDTO {
 }
 
 namespace TaskSourceDTO {
-	export function from(value: TaskSource): TaskSourceDTO {
-		const result: TaskSourceDTO = {
+	export function from(value: TaskSource): tasks.TaskSourceDTO {
+		const result: tasks.TaskSourceDTO = {
 			label: value.label
 		};
 		if (value.kind === TaskSourceKind.Extension) {
@@ -268,7 +264,7 @@ namespace TaskSourceDTO {
 		}
 		return result;
 	}
-	export function to(value: TaskSourceDTO, workspace: IWorkspaceContextService): ExtensionTaskSource {
+	export function to(value: tasks.TaskSourceDTO, workspace: IWorkspaceContextService): ExtensionTaskSource {
 		let scope: TaskScope;
 		let workspaceFolder: IWorkspaceFolder | undefined;
 		if ((value.scope === undefined) || ((typeof value.scope === 'number') && (value.scope !== TaskScope.Global))) {
@@ -297,18 +293,18 @@ namespace TaskSourceDTO {
 }
 
 namespace TaskHandleDTO {
-	export function is(value: any): value is TaskHandleDTO {
-		const candidate: TaskHandleDTO = value;
+	export function is(value: any): value is tasks.TaskHandleDTO {
+		const candidate: tasks.TaskHandleDTO = value;
 		return candidate && Types.isString(candidate.id) && !!candidate.workspaceFolder;
 	}
 }
 
 namespace TaskDTO {
-	export function from(task: Task | ConfiguringTask): TaskDTO | undefined {
+	export function from(task: Task | ConfiguringTask): tasks.TaskDTO | undefined {
 		if (task === undefined || task === null || (!CustomTask.is(task) && !ContributedTask.is(task) && !ConfiguringTask.is(task))) {
 			return undefined;
 		}
-		const result: TaskDTO = {
+		const result: tasks.TaskDTO = {
 			_id: task._id,
 			name: task.configurationProperties.name,
 			definition: TaskDefinitionDTO.from(task.getDefinition(true)),
@@ -342,7 +338,7 @@ namespace TaskDTO {
 		return result;
 	}
 
-	export function to(task: TaskDTO | undefined, workspace: IWorkspaceContextService, executeOnly: boolean): ContributedTask | undefined {
+	export function to(task: tasks.TaskDTO | undefined, workspace: IWorkspaceContextService, executeOnly: boolean): ContributedTask | undefined {
 		if (!task || (typeof task.name !== 'string')) {
 			return undefined;
 		}
@@ -390,10 +386,10 @@ namespace TaskDTO {
 }
 
 namespace TaskFilterDTO {
-	export function from(value: TaskFilter): TaskFilterDTO {
+	export function from(value: TaskFilter): tasks.TaskFilterDTO {
 		return value;
 	}
-	export function to(value: TaskFilterDTO | undefined): TaskFilter | undefined {
+	export function to(value: tasks.TaskFilterDTO | undefined): TaskFilter | undefined {
 		return value;
 	}
 }
@@ -417,7 +413,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 			const task = event.__task!;
 			if (event.kind === TaskEventKind.Start) {
 				const execution = TaskExecutionDTO.from(task.getTaskExecution());
-				let resolvedDefinition: TaskDefinitionDTO = execution.task!.definition;
+				let resolvedDefinition: tasks.TaskDefinitionDTO = execution.task!.definition;
 				if (execution.task?.execution && CustomExecutionDTO.is(execution.task.execution) && event.resolvedVariables) {
 					const dictionary: IStringDictionary<string> = {};
 					Array.from(event.resolvedVariables.entries()).forEach(entry => dictionary[entry[0]] = entry[1]);
@@ -442,7 +438,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 		this._providers.clear();
 	}
 
-	$createTaskId(taskDTO: TaskDTO): Promise<string> {
+	$createTaskId(taskDTO: tasks.TaskDTO): Promise<string> {
 		return new Promise((resolve, reject) => {
 			let task = TaskDTO.to(taskDTO, this._workspaceContextServer, true);
 			if (task) {
@@ -502,9 +498,9 @@ export class MainThreadTask implements MainThreadTaskShape {
 		return Promise.resolve(undefined);
 	}
 
-	public $fetchTasks(filter?: TaskFilterDTO): Promise<TaskDTO[]> {
+	public $fetchTasks(filter?: tasks.TaskFilterDTO): Promise<tasks.TaskDTO[]> {
 		return this._taskService.tasks(TaskFilterDTO.to(filter)).then((tasks) => {
-			const result: TaskDTO[] = [];
+			const result: tasks.TaskDTO[] = [];
 			for (let task of tasks) {
 				const item = TaskDTO.from(task);
 				if (item) {
@@ -531,7 +527,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 		return workspace;
 	}
 
-	public async $getTaskExecution(value: TaskHandleDTO | TaskDTO): Promise<TaskExecutionDTO> {
+	public async $getTaskExecution(value: tasks.TaskHandleDTO | tasks.TaskDTO): Promise<tasks.TaskExecutionDTO> {
 		if (TaskHandleDTO.is(value)) {
 			const workspace = this.getWorkspace(value.workspaceFolder);
 			if (workspace) {
@@ -555,10 +551,10 @@ export class MainThreadTask implements MainThreadTaskShape {
 		}
 	}
 
-	// Passing in a TaskHandleDTO will cause the task to get re-resolved, which is important for tasks are coming from the core,
+	// Passing in a tasks.TaskHandleDTO will cause the task to get re-resolved, which is important for tasks are coming from the core,
 	// such as those gotten from a fetchTasks, since they can have missing configuration properties.
-	public $executeTask(value: TaskHandleDTO | TaskDTO): Promise<TaskExecutionDTO> {
-		return new Promise<TaskExecutionDTO>((resolve, reject) => {
+	public $executeTask(value: tasks.TaskHandleDTO | tasks.TaskDTO): Promise<tasks.TaskExecutionDTO> {
+		return new Promise<tasks.TaskExecutionDTO>((resolve, reject) => {
 			if (TaskHandleDTO.is(value)) {
 				const workspace = this.getWorkspace(value.workspaceFolder);
 				if (workspace) {
@@ -566,7 +562,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 						if (!task) {
 							reject(new Error('Task not found'));
 						} else {
-							const result: TaskExecutionDTO = {
+							const result: tasks.TaskExecutionDTO = {
 								id: value.id,
 								task: TaskDTO.from(task)
 							};
@@ -592,7 +588,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 				this._taskService.run(task).then(undefined, reason => {
 					// eat the error, it has already been surfaced to the user and we don't care about it here
 				});
-				const result: TaskExecutionDTO = {
+				const result: tasks.TaskExecutionDTO = {
 					id: task._id,
 					task: TaskDTO.from(task)
 				};
@@ -638,7 +634,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 		});
 	}
 
-	public $registerTaskSystem(key: string, info: TaskSystemInfoDTO): void {
+	public $registerTaskSystem(key: string, info: tasks.TaskSystemInfoDTO): void {
 		let platform: Platform.Platform;
 		switch (info.platform) {
 			case 'Web':

@@ -19,7 +19,8 @@ import { IExtensionDescription } from 'vs/platform/extensions/common/extensions'
 import { IExtHostTerminalService } from 'vs/workbench/api/common/extHostTerminalService';
 import { IExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
 import { IExtHostInitDataService } from 'vs/workbench/api/common/extHostInitDataService';
-import { ExtHostTaskBase, TaskHandleDTO, TaskDTO, CustomExecutionDTO, HandlerData } from 'vs/workbench/api/common/extHostTask';
+import { ExtHostTaskBase, HandlerData } from 'vs/workbench/api/common/extHostTask';
+import { TaskHandleDTO, TaskDTO, CustomExecutionDTO } from 'vs/workbench/api/common/shared/tasksImpl';
 import { Schemas } from 'vs/base/common/network';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IExtHostApiDeprecationService } from 'vs/workbench/api/common/extHostApiDeprecationService';
