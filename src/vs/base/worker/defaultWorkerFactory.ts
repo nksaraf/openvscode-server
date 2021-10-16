@@ -9,6 +9,10 @@ import { IWorker, IWorkerCallback, IWorkerFactory, logOnceWebWorkerWarning } fro
 const ttPolicy = window.trustedTypes?.createPolicy('defaultWorkerFactory', { createScriptURL: value => value });
 
 function getWorker(workerId: string, label: string): Worker | Promise<Worker> {
+	if (workerId === 'workerMain.js') {
+		return import('./worker?worker')
+			.then(({ default: MainWorker }) => new MainWorker());
+	}
 	// Option for hosts to overwrite the worker script (used in the standalone editor)
 	if (globals.MonacoEnvironment) {
 		if (typeof globals.MonacoEnvironment.getWorker === 'function') {

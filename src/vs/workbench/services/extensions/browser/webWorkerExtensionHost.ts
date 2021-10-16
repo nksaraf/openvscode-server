@@ -106,8 +106,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				);
 				const base = (
 					forceHTTPS
-						? `${baseUrl}/out/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
-						: `${baseUrl}/out/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
+						? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
+						: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
 				);
 
 				return base + suffix;
@@ -124,8 +124,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			}
 			const base = (
 				forceHTTPS
-					? `${baseUrl}/out/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
-					: `${baseUrl}/out/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
+					? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
+					: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
 			);
 
 			return base + suffix;
@@ -136,7 +136,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 	public async start(): Promise<IMessagePassingProtocol> {
 		if (!this._protocolPromise) {
 			if (platform.isWeb) {
-				const webWorkerExtensionHostIframeSrc = this._webWorkerExtensionHostIframeSrc();
+				// const webWorkerExtensionHostIframeSrc = this._webWorkerExtensionHostIframeSrc();
+				const webWorkerExtensionHostIframeSrc = null;
 				if (webWorkerExtensionHostIframeSrc) {
 					this._protocolPromise = this._startInsideIframe(webWorkerExtensionHostIframeSrc);
 				} else {
@@ -254,7 +255,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 		const worker = new DefaultWorkerFactory(name).create(
 			'vs/workbench/services/extensions/worker/extensionHostWorker',
 			(data: MessagePort | NewWorkerMessage | TerminateWorkerMessage | any) => {
-
+				console.log(data);
 				if (data instanceof MessagePort) {
 					// receiving a message port which is used to communicate
 					// with the web worker extension host
@@ -309,7 +310,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				this._onDidExit.fire([77, 'UNKNOWN data received']);
 				return;
 			}
-
 			emitter.fire(VSBuffer.wrap(new Uint8Array(data, 0, data.byteLength)));
 		};
 
