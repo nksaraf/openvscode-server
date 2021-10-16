@@ -10,3 +10,20 @@ process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH = path.join(__dirname, '../rem
 require('./bootstrap-node').injectNodeModuleLookupPath(process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH);
 require('./bootstrap-amd').load('vs/server/node/server');
 
+// const { createServer } = require("vite");
+
+// async function main() {
+// 	let server = await createServer({});
+
+// 	try {
+// 		console.log(
+// 			await server.ssrLoadModule("/src/vs/server/node/server.main.ts")
+// 		);
+// 	} catch (e) {
+// 		console.error(e);
+// 	}
+// }
+
+// main();
+
+
