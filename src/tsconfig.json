@@ -13,7 +13,8 @@
 			"sinon",
 			"winreg",
 			"trusted-types",
-			"wicg-file-system-access"
+			"wicg-file-system-access",
+			"vite/client"
 		],
 		"plugins": [
 			{
@@ -22,8 +23,5 @@
 			}
 		]
 	},
-	"include": [
-		"./typings",
-		"./vs"
-	]
+	"include": ["./typings", "./vs"]
 }

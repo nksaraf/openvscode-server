@@ -1,0 +1,48 @@
+<!-- Copyright (C) Microsoft Corporation. All rights reserved. -->
+<!DOCTYPE html>
+<html>
+	<head>
+		<script>
+			performance.mark("code/didStartRenderer");
+		</script>
+		<meta charset="utf-8" />
+
+		<!-- Disable pinch zooming -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+		/>
+
+		<!-- Workbench Configuration -->
+		<meta id="vscode-workbench-web-configuration" data-settings="{}" />
+
+		<!-- Workbench Auth Session -->
+		<meta id="vscode-workbench-auth-session" data-settings="{}" />
+
+		<!-- Builtin Extensions (running out of sources) -->
+		<meta id="vscode-workbench-builtin-extensions" data-settings="[]" />
+
+		<!-- Workbench Icon/Manifest/CSS -->
+		<link rel="icon" href="/favicon.ico" type="image/x-icon" />
+		<link rel="manifest" href="/manifest.json" />
+		<script>
+			window.require = {
+				baseUrl: `${window.location.href}/src`,
+			};
+		</script>
+		<script src="/vs/loader.js"></script>
+		<script>
+			window.require.toUrl = (str) => {
+				return window.require.getConfig().baseUrl + str;
+			};
+		</script>
+		<script>
+			performance.mark("code/willLoadWorkbenchMain");
+		</script>
+		<script
+			type="module"
+			src="./src/vs/server/browser/workbench/workbench.ts"
+		></script>
+	</head>
+	<body aria-label=""></body>
+</html>
