@@ -10,7 +10,8 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import 'vs/css!./gridview';
 import { Box, GridView, IBoundarySashes, IGridViewOptions, IGridViewStyles, IView as IGridViewView, IViewSize, orthogonal, Sizing as GridViewSizing } from './gridview';
 
-export { IViewSize, LayoutPriority, Orientation, orthogonal } from './gridview';
+export { LayoutPriority, Orientation, orthogonal } from './gridview';
+export type { IViewSize };
 
 export const enum Direction {
 	Up,

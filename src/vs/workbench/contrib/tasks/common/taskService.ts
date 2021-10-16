@@ -15,8 +15,7 @@ import { ITaskSummary, TaskTerminateResponse, TaskSystemInfo } from 'vs/workbenc
 import { IStringDictionary } from 'vs/base/common/collections';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 
-export { ITaskSummary, Task, TaskTerminateResponse };
-
+export type { ITaskSummary, Task, TaskTerminateResponse };
 export const CustomExecutionSupportedContext = new RawContextKey<boolean>('customExecutionSupported', true, nls.localize('tasks.customExecutionSupported', "Whether CustomExecution tasks are supported. Consider using in the when clause of a \'taskDefinition\' contribution."));
 export const ShellExecutionSupportedContext = new RawContextKey<boolean>('shellExecutionSupported', false, nls.localize('tasks.shellExecutionSupported', "Whether ShellExecution tasks are supported. Consider using in the when clause of a \'taskDefinition\' contribution."));
 export const ProcessExecutionSupportedContext = new RawContextKey<boolean>('processExecutionSupported', false, nls.localize('tasks.processExecutionSupported', "Whether ProcessExecution tasks are supported. Consider using in the when clause of a \'taskDefinition\' contribution."));
