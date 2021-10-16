@@ -697,17 +697,96 @@ export {
 
 	// Factory
 	create,
-	IWorkbenchConstructionOptions,
-	IWorkbench,
+	// IWorkbenchConstructionOptions,
+	// IWorkbench,
 
 	// Basic Types
 	URI,
-	UriComponents,
+	// UriComponents
 	Event,
 	Emitter,
-	IDisposable,
+	// IDisposable,
 	Disposable,
 
+	// // Workspace
+	// IWorkspace,
+	// IWorkspaceProvider,
+
+	// // WebSockets
+	// IWebSocketFactory,
+	// IWebSocket,
+
+	// // Resources
+	// IResourceUriProvider,
+
+	// // Credentials
+	// ICredentialsProvider,
+
+	// // Callbacks
+	// IURLCallbackProvider,
+
+	// LogLevel
+	LogLevel,
+
+	// SettingsSync
+	// ISettingsSyncOptions,
+
+	// Updates/Quality
+	// IUpdateProvider,
+	// IUpdate,
+	// IProductQualityChangeHandler,
+
+	// // Telemetry
+	// ICommonTelemetryPropertiesResolver,
+
+	// // External Uris
+	// IExternalUriResolver,
+
+	// // Tunnel
+	// ITunnelProvider,
+	// ITunnelFactory,
+	// ITunnel,
+	// ITunnelOptions,
+
+	// // Ports
+	// IShowPortCandidate,
+
+	// Commands
+	// ICommand,
+	commands,
+
+	// // Branding
+	// IHomeIndicator,
+	// IWelcomeBanner,
+	// IWelcomeBannerAction,
+	// IProductConfiguration,
+	// IWindowIndicator,
+	// IInitialColorTheme,
+
+	// // Default layout
+	// IDefaultView,
+	// IDefaultEditor,
+	// IDefaultLayout,
+	// IPosition,
+	// IRange as ISelection,
+
+	// Env
+	// IPerformanceMark,
+	env,
+
+	// // Development
+	// IDevelopmentOptions
+};
+
+export type {
+	IWorkbenchConstructionOptions,
+	IWorkbench,
+
+	UriComponents,
+
+	ICommand,
+
+	IDisposable,
 	// Workspace
 	IWorkspace,
 	IWorkspaceProvider,
@@ -724,12 +803,6 @@ export {
 
 	// Callbacks
 	IURLCallbackProvider,
-
-	// LogLevel
-	LogLevel,
-
-	// SettingsSync
-	ISettingsSyncOptions,
 
 	// Updates/Quality
 	IUpdateProvider,
@@ -751,10 +824,6 @@ export {
 	// Ports
 	IShowPortCandidate,
 
-	// Commands
-	ICommand,
-	commands,
-
 	// Branding
 	IHomeIndicator,
 	IWelcomeBanner,
@@ -770,12 +839,12 @@ export {
 	IPosition,
 	IRange as ISelection,
 
-	// Env
-	IPerformanceMark,
-	env,
+	ISettingsSyncOptions,
 
+	IPerformanceMark,
 	// Development
 	IDevelopmentOptions
+
 };
 
 //#endregion

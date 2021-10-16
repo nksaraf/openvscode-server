@@ -110,7 +110,7 @@ export interface IQuickAccessProviderDescriptor {
 	/**
 	 * The actual provider that will be instantiated as needed.
 	 */
-	readonly ctor: { new(...services: any /* TS BrandedService but no clue how to type this properly */[]): IQuickAccessProvider };
+	readonly ctor: { new(...services: any[] /* TS BrandedService but no clue how to type this properly */): IQuickAccessProvider };
 
 	/**
 	 * The prefix for quick access picker to use the provider for.

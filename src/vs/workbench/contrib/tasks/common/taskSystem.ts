@@ -64,8 +64,8 @@ export interface TelemetryEvent {
 }
 
 export namespace Triggers {
-	export let shortcut: string = 'shortcut';
-	export let command: string = 'command';
+	export const shortcut: string = 'shortcut';
+	export const command: string = 'command';
 }
 
 export interface ITaskSummary {
