@@ -95,6 +95,7 @@ function _format(message: string, args: (string | number | boolean | undefined |
 	return result;
 }
 
+// @ts-ignore
 function findLanguageForModule(config: { [x: string]: any; }, name: string | number) {
 	let result = config[name];
 	if (result) {
@@ -111,6 +112,7 @@ function internalLocalize(env: Environment, data: any, message: string, ...args:
 	return _format(message, args, env);
 }
 
+// @ts-ignore
 function createScopedLocalize(scope: string[], env: Environment): IBoundLocalizeFunc {
 	return function (idx: number, defaultValue: null) {
 		let restArgs = Array.prototype.slice.call(arguments, 2);

@@ -439,7 +439,7 @@ export class BrowserKeyboardMapperFactory extends BrowserKeyboardMapperFactoryBa
 	constructor(notificationService: INotificationService, storageService: IStorageService, commandService: ICommandService) {
 		// super(notificationService, storageService, commandService);
 		super();
-
+		// @ts-ignore
 		const platform = isWindows ? 'win' : isMacintosh ? 'darwin' : 'linux';
 
 		import('vs/workbench/services/keybinding/browser/keyboardLayouts/layout.contribution.darwin').then((m) => {

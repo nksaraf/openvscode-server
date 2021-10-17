@@ -110,7 +110,7 @@ import * as fs from 'fs';
 const pkg = JSON.parse(fs.readFileSync('package.json', { encoding: 'utf-8' }));
 
 const fn = factory(path, os, pkg.name, process.cwd());
-export default fn;
+export const getUserDataPath = fn.getUserDataPath;
 // } else if (typeof module === 'object' && typeof module.exports === 'object') {
 // 	const pkg = require('../../../../../package.json');
 // 	const path = require('path');
