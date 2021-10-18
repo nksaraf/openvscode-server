@@ -9,15 +9,22 @@ import resolve from '@rollup/plugin-node-resolve';
 
 export default defineConfig({
 	publicDir: 'src',
+	esbuild: {
+		banner: 'let require = { toUrl: (s) => s }; console.log(import.meta.url)',
+		include: ['src/**/*.{js,ts,tsx}', './node_modules/semver/index.js'],
+		// include: ['node_modules/semver/index.js']
+	},
 	// esbuild: { tsconfigRaw: { compilerOptions: { useDefineForClassFields: true, importsNotUsedAsValues: 'remove' } } },
 	build: {
 		rollupOptions: {
 			input: {
+
 				index: path.resolve(__dirname, 'index.html'),
 				webExtensionHost: path.resolve(__dirname, 'src/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html'),
 			}
 		}
 	},
+
 	resolve: {
 		alias: [
 			{
