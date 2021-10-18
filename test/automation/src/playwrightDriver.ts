@@ -40,7 +40,7 @@ function buildDriver(browser: playwright.Browser, context: playwright.BrowserCon
 		getWindowIds: () => {
 			return Promise.resolve([1]);
 		},
-		capturePage: () => Promise.resolve(''),
+		capturePage: () => page.screenshot().then(buffer => buffer.toString('base64')),
 		reloadWindow: (windowId) => Promise.resolve(),
 		exitApplication: async () => {
 			try {
@@ -203,6 +203,28 @@ export async function connect(options: Options = {}): Promise<{ client: IDisposa
 		if (response.status() >= 400) {
 			console.error(`Playwright ERROR: HTTP status ${response.status()} for ${response.url()}`);
 		}
+		const page = await context.newPage();
+		await page.setViewportSize({ width, height });
+		page.on('pageerror', async error => console.error(`Playwright ERROR: page error: ${error}`));
+		page.on('crash', page => console.error('Playwright ERROR: page crash'));
+		page.on('response', async response => {
+			if (response.status() >= 400) {
+				console.error(`Playwright ERROR: HTTP status ${response.status()} for ${response.url()}`);
+			}
+		});
+		const payloadParam = `[["enableProposedApi",""],["skipWelcome","true"]]`;
+		const match = /http:\/\/(.*)/.exec(endpoint!);
+		await page.goto(`${endpoint}/?folder=vscode-remote://${match![1]}${URI.file(workspacePath!).path}&payload=${payloadParam}`);
+		const result = {
+			client: {
+				dispose: () => {
+					browser.close();
+					teardown();
+				}
+			},
+			driver: buildDriver(browser, context, page)
+		};
+		c(result);
 	});
 	const payloadParam = `[["enableProposedApi",""],["skipWelcome","true"]]`;
 	await page.goto(`${endpoint}&folder=vscode-remote://localhost:9888${URI.file(workspacePath!).path}&payload=${payloadParam}`);
