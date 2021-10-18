@@ -45,6 +45,7 @@ export interface IWebSocket {
 	close(): void;
 }
 
+
 class BrowserWebSocket extends Disposable implements IWebSocket {
 
 	private readonly _onData = new Emitter<ArrayBuffer>();

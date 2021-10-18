@@ -85,59 +85,59 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 		this._extensionHostLogFile = joinPath(this._extensionHostLogsLocation, `${ExtensionHostLogFileName}.log`);
 	}
 
-	private _webWorkerExtensionHostIframeSrc(): string | null {
-		const suffix = this._environmentService.debugExtensionHost && this._environmentService.debugRenderer ? '?debugged=1' : '?';
-		if (this._environmentService.options && this._environmentService.options.webWorkerExtensionHostIframeSrc) {
-			return this._environmentService.options.webWorkerExtensionHostIframeSrc + suffix;
-		}
+	// private _webWorkerExtensionHostIframeSrc(): string | null {
+	// 	const suffix = this._environmentService.debugExtensionHost && this._environmentService.debugRenderer ? '?debugged=1' : '?';
+	// 	if (this._environmentService.options && this._environmentService.options.webWorkerExtensionHostIframeSrc) {
+	// 		return this._environmentService.options.webWorkerExtensionHostIframeSrc + suffix;
+	// 	}
 
-		const forceHTTPS = (location.protocol === 'https:');
+	// 	const forceHTTPS = (location.protocol === 'https:');
 
-		if (this._environmentService.options && this._environmentService.options.__uniqueWebWorkerExtensionHostOrigin) {
-			const webEndpointUrlTemplate = this._productService.webEndpointUrlTemplate;
-			const commit = this._productService.commit;
-			const quality = this._productService.quality;
-			if (webEndpointUrlTemplate && commit && quality) {
-				const baseUrl = (
-					webEndpointUrlTemplate
-						.replace('{{uuid}}', generateUuid())
-						.replace('{{commit}}', commit)
-						.replace('{{quality}}', quality)
-				);
-				const base = (
-					forceHTTPS
-						? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
-						: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
-				);
+	// 	if (this._environmentService.options && this._environmentService.options.__uniqueWebWorkerExtensionHostOrigin) {
+	// 		const webEndpointUrlTemplate = this._productService.webEndpointUrlTemplate;
+	// 		const commit = this._productService.commit;
+	// 		const quality = this._productService.quality;
+	// 		if (webEndpointUrlTemplate && commit && quality) {
+	// 			const baseUrl = (
+	// 				webEndpointUrlTemplate
+	// 					.replace('{{uuid}}', generateUuid())
+	// 					.replace('{{commit}}', commit)
+	// 					.replace('{{quality}}', quality)
+	// 			);
+	// 			const base = (
+	// 				forceHTTPS
+	// 					? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
+	// 					: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
+	// 			);
 
-				return base + suffix;
-			}
-		}
+	// 			return base + suffix;
+	// 		}
+	// 	}
 
-		if (this._productService.webEndpointUrl) {
-			let baseUrl = this._productService.webEndpointUrl;
-			if (this._productService.quality) {
-				baseUrl += `/${this._productService.quality}`;
-			}
-			if (this._productService.commit) {
-				baseUrl += `/${this._productService.commit}`;
-			}
-			const base = (
-				forceHTTPS
-					? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
-					: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
-			);
+	// 	if (this._productService.webEndpointUrl) {
+	// 		let baseUrl = this._productService.webEndpointUrl;
+	// 		if (this._productService.quality) {
+	// 			baseUrl += `/${this._productService.quality}`;
+	// 		}
+	// 		if (this._productService.commit) {
+	// 			baseUrl += `/${this._productService.commit}`;
+	// 		}
+	// 		const base = (
+	// 			forceHTTPS
+	// 				? `${baseUrl}/vs/workbench/services/extensions/worker/httpsWebWorkerExtensionHostIframe.html`
+	// 				: `${baseUrl}/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html`
+	// 		);
 
-			return base + suffix;
-		}
-		return null;
-	}
+	// 		return base + suffix;
+	// 	}
+	// 	return null;
+	// }
 
 	public async start(): Promise<IMessagePassingProtocol> {
 		if (!this._protocolPromise) {
 			if (platform.isWeb) {
-				const webWorkerExtensionHostIframeSrc = this._webWorkerExtensionHostIframeSrc();
-				// const webWorkerExtensionHostIframeSrc = null;
+				// const webWorkerExtensionHostIframeSrc = this._webWorkerExtensionHostIframeSrc();
+				const webWorkerExtensionHostIframeSrc = null;
 				if (webWorkerExtensionHostIframeSrc) {
 					this._protocolPromise = this._startInsideIframe(webWorkerExtensionHostIframeSrc);
 				} else {

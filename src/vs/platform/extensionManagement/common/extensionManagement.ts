@@ -445,7 +445,6 @@ export interface IExtensionTipsService {
 	getAllWorkspacesTips(): Promise<IWorkspaceTips[]>;
 }
 
-
 export const DefaultIconPath = FileAccess.asBrowserUri('./media/defaultIcon.png', require).toString(true);
 export const ExtensionsLabel = localize('extensions', "Extensions");
 export const ExtensionsLocalizedLabel = { value: ExtensionsLabel, original: 'Extensions' };

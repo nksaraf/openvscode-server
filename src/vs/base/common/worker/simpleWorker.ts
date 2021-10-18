@@ -333,7 +333,7 @@ export class SimpleWorkerServer<H extends object> {
 		}
 	}
 
-	private initialize(workerId: number, loaderConfig: any, moduleId: string, hostMethods: string[]): Promise<string[]> {
+	private async initialize(workerId: number, loaderConfig: any, moduleId: string, hostMethods: string[]): Promise<string[]> {
 		this._protocol.setWorkerId(workerId);
 
 		const proxyMethodRequest = (method: string, args: any[]): Promise<any> => {
@@ -365,22 +365,18 @@ export class SimpleWorkerServer<H extends object> {
 
 			// Since this is in a web worker, enable catching errors
 			loaderConfig.catchError = true;
-			(<any>self).require.config(loaderConfig);
+			// (<any>self).require.config(loaderConfig);
 		}
 
-		return new Promise<string[]>((resolve, reject) => {
-			// Use the global require to be sure to get the global config
-			(<any>self).require([moduleId], (module: { create: IRequestHandlerFactory<H> }) => {
-				this._requestHandler = module.create(hostProxy);
+		console.log('loading ' + moduleId + ' ...');
+		let mod: { create: IRequestHandlerFactory<H> } = await import(`./../../../../${moduleId}.ts`);
+		this._requestHandler = mod.create(hostProxy);
 
-				if (!this._requestHandler) {
-					reject(new Error(`No RequestHandler!`));
-					return;
-				}
+		if (!this._requestHandler) {
+			throw new Error(`No RequestHandler!`);
+		}
 
-				resolve(types.getAllMethodNames(this._requestHandler));
-			}, reject);
-		});
+		return types.getAllMethodNames(this._requestHandler);
 	}
 }
 

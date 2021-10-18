@@ -6,23 +6,23 @@
 //@ts-check
 "use strict";
 
-import * as performance from "./vs/base/common/performance";
-performance.mark("code/fork/start");
+// import * as performance from "./vs/base/common/performance";
+// performance.mark("code/fork/start");
 
-import * as bootstrap from "./bootstrap";
-import bootstrapNode from "./bootstrap-node";
+const bootstrap = require("./bootstrap");
+// import bootstrapNode from "./bootstrap-node";
 
 // Remove global paths from the node module lookup
-bootstrapNode.removeGlobalNodeModuleLookupPaths();
+// bootstrapNode.removeGlobalNodeModuleLookupPaths();
 
 // Enable ASAR in our forked processes
 bootstrap.enableASARSupport();
 
-if (process.env["VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH"]) {
-	bootstrapNode.injectNodeModuleLookupPath(
-		process.env["VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH"]
-	);
-}
+// if (process.env["VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH"]) {
+// 	bootstrapNode.injectNodeModuleLookupPath(
+// 		process.env["VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH"]
+// 	);
+// }
 
 // Configure: pipe logging to parent process
 if (!!process.send && process.env["VSCODE_PIPE_LOGGING"] === "true") {
@@ -42,8 +42,28 @@ if (process.env["VSCODE_PARENT_PID"]) {
 // Configure Crash Reporter
 configureCrashReporter();
 
+const { createServer } = require("vite");
+
+global.require = require;
+
+async function main() {
+	let server = await createServer({});
+
+	try {
+		const mod = await server.ssrLoadModule(
+			process.env["VSCODE_AMD_ENTRYPOINT"]
+		);
+		console.log(mod);
+		mod.start();
+	} catch (e) {
+		console.error(e);
+	}
+}
+
+main();
+
 // Load AMD entry point
-require("./bootstrap-amd").load(process.env["VSCODE_AMD_ENTRYPOINT"]);
+// require("./bootstrap-amd").load(process.env["VSCODE_AMD_ENTRYPOINT"]);
 
 //#region Helpers
 

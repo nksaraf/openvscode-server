@@ -2,21 +2,17 @@
  *  Copyright (c) Gitpod. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-import { isStandalone } from 'vs/base/browser/browser';
-import { streamToBuffer } from 'vs/base/common/buffer';
+import { streamToBuffer, VSBuffer } from 'vs/base/common/buffer';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Emitter, Event } from 'vs/base/common/event';
-import { Schemas } from 'vs/base/common/network';
-import { isEqual } from 'vs/base/common/resources';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { request } from 'vs/base/parts/request/browser/request';
 import { localize } from 'vs/nls';
 import { parseLogLevel } from 'vs/platform/log/common/log';
-import { defaultWebSocketFactory } from 'vs/platform/remote/browser/browserSocketFactory';
-// import { defaultWebSocketFactory } from 'vs/platform/remote/browser/browserSocketFactory';
 import { isFolderToOpen, isWorkspaceToOpen } from 'vs/platform/windows/common/windows';
-import { create, Disposable, ICredentialsProvider, IHomeIndicator, IProductQualityChangeHandler, IURLCallbackProvider, IWindowIndicator, IWorkbenchConstructionOptions, IWorkspace, IWorkspaceProvider } from 'vs/workbench/workbench.web.api';
+import { create, Disposable, ICredentialsProvider, IHomeIndicator, IProductQualityChangeHandler, IURLCallbackProvider, IWebSocket, IWindowIndicator, IWorkbenchConstructionOptions, IWorkspace } from 'vs/workbench/workbench.web.api';
+import { WorkspaceProvider } from './workspace';
 
 function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 	let query: string | undefined = undefined;
@@ -242,102 +238,6 @@ class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvi
 	}
 }
 
-class WorkspaceProvider implements IWorkspaceProvider {
-
-	static QUERY_PARAM_EMPTY_WINDOW = 'ew';
-	static QUERY_PARAM_FOLDER = 'folder';
-	static QUERY_PARAM_WORKSPACE = 'workspace';
-
-	static QUERY_PARAM_PAYLOAD = 'payload';
-
-	readonly trusted = true;
-
-	constructor(
-		readonly workspace: IWorkspace,
-		readonly payload: object
-	) { }
-
-	async open(workspace: IWorkspace, options?: { reuse?: boolean, payload?: object }): Promise<boolean> {
-		if (options?.reuse && !options.payload && this.isSame(this.workspace, workspace)) {
-			return true; // return early if workspace and environment is not changing and we are reusing window
-		}
-
-		const targetHref = this.createTargetUrl(workspace, options);
-		if (targetHref) {
-			if (options?.reuse) {
-				window.location.href = targetHref;
-				return true;
-			} else {
-				let result;
-				if (isStandalone) {
-					result = window.open(targetHref, '_blank', 'toolbar=no'); // ensures to open another 'standalone' window!
-				} else {
-					result = window.open(targetHref);
-				}
-
-				return !!result;
-			}
-		}
-		return false;
-	}
-
-	private createTargetUrl(workspace: IWorkspace, options?: { reuse?: boolean, payload?: object }): string | undefined {
-
-		// Empty
-		let targetHref: string | undefined = undefined;
-		if (!workspace) {
-			targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_EMPTY_WINDOW}=true`;
-		}
-
-		// Folder
-		else if (isFolderToOpen(workspace)) {
-			targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_FOLDER}=${encodeURIComponent(workspace.folderUri.toString())}`;
-		}
-
-		// Workspace
-		else if (isWorkspaceToOpen(workspace)) {
-			targetHref = `${document.location.origin}${document.location.pathname}?${WorkspaceProvider.QUERY_PARAM_WORKSPACE}=${encodeURIComponent(workspace.workspaceUri.toString())}`;
-		}
-
-		// Append payload if any
-		if (options?.payload) {
-			targetHref += `&${WorkspaceProvider.QUERY_PARAM_PAYLOAD}=${encodeURIComponent(JSON.stringify(options.payload))}`;
-		}
-
-		return targetHref;
-	}
-
-	private isSame(workspaceA: IWorkspace, workspaceB: IWorkspace): boolean {
-		if (!workspaceA || !workspaceB) {
-			return workspaceA === workspaceB; // both empty
-		}
-
-		if (isFolderToOpen(workspaceA) && isFolderToOpen(workspaceB)) {
-			return isEqual(workspaceA.folderUri, workspaceB.folderUri); // same workspace
-		}
-
-		if (isWorkspaceToOpen(workspaceA) && isWorkspaceToOpen(workspaceB)) {
-			return isEqual(workspaceA.workspaceUri, workspaceB.workspaceUri); // same workspace
-		}
-
-		return false;
-	}
-
-	hasRemote(): boolean {
-		if (this.workspace) {
-			if (isFolderToOpen(this.workspace)) {
-				return this.workspace.folderUri.scheme === Schemas.vscodeRemote;
-			}
-
-			if (isWorkspaceToOpen(this.workspace)) {
-				return this.workspace.workspaceUri.scheme === Schemas.vscodeRemote;
-			}
-		}
-
-		return true;
-	}
-}
-
 class WindowIndicator implements IWindowIndicator {
 
 	readonly onDidChange = Event.None;
@@ -378,51 +278,14 @@ class WindowIndicator implements IWindowIndicator {
 }
 
 
-(function () {
+function createVSCode(dom: HTMLElement, options) {
 	// Find config by checking for DOM
 	const configElement = document.getElementById('vscode-workbench-web-configuration');
 	const configElementAttribute = configElement ? configElement.getAttribute('data-settings') : undefined;
 	const config: IWorkbenchConstructionOptions = configElementAttribute ? JSON.parse(configElementAttribute) : {};
 
 	// Find workspace to open and payload
-	let workspace: IWorkspace;
-	let payload = Object.create(null);
-	let logLevel: string | undefined = undefined;
-
-	const query = new URL(document.location.href).searchParams;
-	query.forEach((value, key) => {
-		switch (key) {
-
-			// Folder
-			case WorkspaceProvider.QUERY_PARAM_FOLDER:
-				workspace = { folderUri: URI.parse(value) };
-				break;
-
-			// Workspace
-			case WorkspaceProvider.QUERY_PARAM_WORKSPACE:
-				workspace = { workspaceUri: URI.parse(value) };
-				break;
-
-			// Empty
-			case WorkspaceProvider.QUERY_PARAM_EMPTY_WINDOW:
-				workspace = undefined;
-				break;
-
-			// Payload
-			case WorkspaceProvider.QUERY_PARAM_PAYLOAD:
-				try {
-					payload = JSON.parse(value);
-				} catch (error) {
-					console.error(error); // possible invalid JSON
-				}
-				break;
-
-			// Log level
-			case 'logLevel':
-				logLevel = value;
-				break;
-		}
-	});
+	let { workspace, payload, options: argOptions }: { workspace: IWorkspace; payload: any; options: { logLevel?: string; } } = parseArgs();
 
 	// Workspace Provider
 	const workspaceProvider = new WorkspaceProvider(workspace, payload);
@@ -467,7 +330,7 @@ class WindowIndicator implements IWindowIndicator {
 	webWorkerExtensionEndpoint.pathname = `/src/vs/workbench/services/extensions/worker/${window.location.protocol === 'https:' ? 'https' : 'http'}WebWorkerExtensionHostIframe.html`;
 	webWorkerExtensionEndpoint.search = '';
 
-	create(document.body, {
+	return create(dom, {
 		webviewEndpoint: webviewEndpoint.href,
 		webWorkerExtensionHostIframeSrc: webWorkerExtensionEndpoint.href,
 		remoteAuthority,
@@ -475,10 +338,12 @@ class WindowIndicator implements IWindowIndicator {
 			create: url => {
 				const codeServerUrl = new URL(url);
 				codeServerUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-				return defaultWebSocketFactory.create(codeServerUrl.toString());
+				let webSocket = new FakeWebSocket(codeServerUrl.toString());
+				return webSocket;
 			}
 		},
 		resourceUriProvider: uri => {
+			console.log('resource uri provicer uri', uri)
 			return URI.from({
 				scheme: location.protocol === 'https:' ? 'https' : 'http',
 				authority: remoteAuthority,
@@ -487,7 +352,7 @@ class WindowIndicator implements IWindowIndicator {
 			});
 		},
 		developmentOptions: {
-			logLevel: logLevel ? parseLogLevel(logLevel) : undefined,
+			logLevel: argOptions.logLevel ? parseLogLevel(argOptions.logLevel) : undefined,
 			...config.developmentOptions
 		},
 		homeIndicator,
@@ -497,4 +362,78 @@ class WindowIndicator implements IWindowIndicator {
 		urlCallbackProvider: new PollingURLCallbackProvider(),
 		credentialsProvider: new LocalStorageCredentialsProvider()
 	});
-})();
+}
+
+createVSCode(document.body, {});
+
+class FakeWebSocket extends Disposable implements IWebSocket {
+	private readonly _onData: Emitter<ArrayBuffer> = new Emitter<ArrayBuffer>();;
+	private readonly _onOpen: Emitter<void> = new Emitter<void>();
+	private readonly _onClose: Emitter<void> = new Emitter<void>();
+	private readonly _onMessage: Emitter<string> = new Emitter<string>();
+	private readonly _onError: Emitter<Error> = new Emitter<Error>();
+
+	public readonly onOpen: Event<void> = this._onOpen.event;
+	public readonly onData: Event<ArrayBuffer> = this._onData.event;
+	public readonly onClose: Event<void> = this._onClose.event;
+	public readonly onMessage: Event<string> = this._onMessage.event;
+	public readonly onError: Event<Error> = this._onError.event;
+
+	constructor(public url: string) {
+		super()
+	}
+
+	public send(data: ArrayBuffer | ArrayBufferView): void {
+		console.log(VSBuffer.wrap(new Uint8Array(data as ArrayBuffer)).toString());
+	}
+
+	public close(): void {
+		this.dispose();
+		// TODO(ak)
+	}
+}
+
+function parseArgs() {
+	let workspace: IWorkspace;
+	let payload = Object.create(null);
+	let options = {
+		logLevel: undefined as string | undefined
+	};
+
+	const query = new URL(document.location.href).searchParams;
+	query.forEach((value, key) => {
+		switch (key) {
+
+			// Folder
+			case WorkspaceProvider.QUERY_PARAM_FOLDER:
+				workspace = { folderUri: URI.parse(value) };
+				break;
+
+			// Workspace
+			case WorkspaceProvider.QUERY_PARAM_WORKSPACE:
+				workspace = { workspaceUri: URI.parse(value) };
+				break;
+
+			// Empty
+			case WorkspaceProvider.QUERY_PARAM_EMPTY_WINDOW:
+				workspace = undefined;
+				break;
+
+			// Payload
+			case WorkspaceProvider.QUERY_PARAM_PAYLOAD:
+				try {
+					payload = JSON.parse(value);
+				} catch (error) {
+					console.error(error); // possible invalid JSON
+				}
+				break;
+
+			// Log level
+			case 'logLevel':
+				options.logLevel = value;
+				break;
+		}
+	});
+	return { workspace, payload, options };
+}
+

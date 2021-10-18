@@ -3,27 +3,30 @@
  *--------------------------------------------------------------------------------------------*/
 
 //@ts-check
-'use strict';
+"use strict";
 
-const path = require('path');
-process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH = path.join(__dirname, '../remote/node_modules');
-require('./bootstrap-node').injectNodeModuleLookupPath(process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH);
-require('./bootstrap-amd').load('vs/server/node/server');
+// const path = require('path');
+// process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH = path.join(__dirname, '../remote/node_modules');
+// require('./bootstrap-node').injectNodeModuleLookupPath(process.env.VSCODE_INJECT_NODE_MODULE_LOOKUP_PATH);
+// require('./bootstrap-amd').load('vs/server/node/server');
 
-// const { createServer } = require("vite");
+const { createServer } = require("vite");
 
-// async function main() {
-// 	let server = await createServer({});
+global.require = require;
 
-// 	try {
-// 		console.log(
-// 			await server.ssrLoadModule("/src/vs/server/node/server.main.ts")
-// 		);
-// 	} catch (e) {
-// 		console.error(e);
-// 	}
-// }
+async function main() {
+	let server = await createServer({});
 
-// main();
+	try {
+		const mod = await server.ssrLoadModule("/src/vs/server/node/server.ts");
+		// mod.start();
+		console.log(mod);
 
+		// server.
+	} catch (e) {
+		console.error(e);
+	}
+	await server.listen();
+}
 
+main();
