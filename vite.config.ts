@@ -6,19 +6,38 @@ import path from 'path';
 import { Alias, defineConfig } from 'vite';
 import resolve from '@rollup/plugin-node-resolve';
 
+let basePath = path.resolve(__dirname);
+console.log(basePath)
 
 export default defineConfig({
-	publicDir: 'src',
+	// publicDir: 'src',
+	// plugins: [{
+	// 	config: (config, env) => {
+	// 		// if (env.)
+	// 	}
+	// }],
 	esbuild: {
-		banner: 'let require = { toUrl: (s) => s }; console.log(import.meta.url)',
-		include: ['src/**/*.{js,ts,tsx}', './node_modules/semver/index.js'],
-		// include: ['node_modules/semver/index.js']
+		banner: `let require = {
+			toUrl: (s) => {
+				let meta = import.meta
+				// if (s.length > 0 && typeof global !== 'undefined') {
+				// 	try {
+				// 		console.log(global.require.resolve(s))
+				// 	} catch (e) {
+				// 		console.log('ERROR', e)
+				// 	}
+				// }
+				if (s === 'bootstrap-fork') {
+					return "${basePath}/src/bootstrap-vite-fork.js"
+				}
+				return "${basePath}/" + (s.length === 0 ? 'package.json' : s);
+			},
+			__$__nodeRequire: import.meta.env.SSR ? ((...args) => global.require(...args)) : undefined
+		};`,
 	},
-	// esbuild: { tsconfigRaw: { compilerOptions: { useDefineForClassFields: true, importsNotUsedAsValues: 'remove' } } },
 	build: {
 		rollupOptions: {
 			input: {
-
 				index: path.resolve(__dirname, 'index.html'),
 				webExtensionHost: path.resolve(__dirname, 'src/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html'),
 			}
@@ -34,7 +53,7 @@ export default defineConfig({
 			},
 			{ find: 'vs/base/common/marked/marked', replacement: 'marked' },
 			{ find: 'vs/base/browser/dompurify/dompurify', replacement: 'dompurify' },
-			{ find: 'vs/base/common/semver/semver', replacement: 'semver' },
+			// { find: 'vs/base/common/semver/semver', replacement: 'semver' },
 			{ find: 'vs', replacement: path.resolve(__dirname, 'src/vs') },
 		] as Alias[],
 	},

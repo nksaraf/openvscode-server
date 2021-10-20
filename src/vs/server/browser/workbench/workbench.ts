@@ -463,20 +463,20 @@ class WindowIndicator implements IWindowIndicator {
 
 	// TODO(ak) secure by using external endpoint
 	const webWorkerExtensionEndpoint = new URL(window.location.href);
-	webWorkerExtensionEndpoint.pathname = `/out/vs/workbench/services/extensions/worker/${window.location.protocol === 'https:' ? 'https' : 'http'}WebWorkerExtensionHostIframe.html`;
+	webWorkerExtensionEndpoint.pathname = `/src/vs/workbench/services/extensions/worker/${window.location.protocol === 'https:' ? 'https' : 'http'}WebWorkerExtensionHostIframe.html`;
 	webWorkerExtensionEndpoint.search = '';
 
 	create(document.body, {
 		webviewEndpoint: webviewEndpoint.href,
 		webWorkerExtensionHostIframeSrc: webWorkerExtensionEndpoint.href,
-		remoteAuthority,
-		webSocketFactory: {
-			create: url => {
-				const codeServerUrl = new URL(url);
-				codeServerUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-				return defaultWebSocketFactory.create(codeServerUrl.toString());
-			}
-		},
+		// remoteAuthority,
+		// webSocketFactory: {
+		// 	create: url => {
+		// 		const codeServerUrl = new URL(url);
+		// 		codeServerUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+		// 		return defaultWebSocketFactory.create(codeServerUrl.toString());
+		// 	}
+		// },
 		resourceUriProvider: uri => {
 			return URI.from({
 				scheme: location.protocol === 'https:' ? 'https' : 'http',

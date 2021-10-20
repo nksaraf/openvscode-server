@@ -12,17 +12,21 @@
 
 const { createServer } = require("vite");
 
+global.require = require;
+
 async function main() {
 	let server = await createServer({});
 
 	try {
-		const mod = await server.ssrLoadModule(
-			"/src/vs/server/node/server.main.ts"
-		);
-		console.log(mod.name);
+		const mod = await server.ssrLoadModule("/src/vs/server/node/server.ts");
+		// mod.start();
+		console.log(mod);
+
+		// server.
 	} catch (e) {
 		console.error(e);
 	}
+	await server.listen();
 }
 
 main();
