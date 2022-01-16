@@ -11,7 +11,18 @@ import { request } from 'vs/base/parts/request/browser/request';
 import { localize } from 'vs/nls';
 import { parseLogLevel } from 'vs/platform/log/common/log';
 import { isFolderToOpen, isWorkspaceToOpen } from 'vs/platform/windows/common/windows';
-import { create, Disposable, ICredentialsProvider, IHomeIndicator, IProductQualityChangeHandler, IURLCallbackProvider, IWebSocket, IWindowIndicator, IWorkbenchConstructionOptions, IWorkspace } from 'vs/workbench/workbench.web.api';
+import {
+	create,
+	Disposable,
+	ICredentialsProvider,
+	IHomeIndicator,
+	IProductQualityChangeHandler,
+	IURLCallbackProvider,
+	IWebSocket,
+	IWindowIndicator,
+	IWorkbenchConstructionOptions,
+	IWorkspace,
+} from 'vs/workbench/workbench.web.api';
 import { WorkspaceProvider } from './workspace';
 
 function doCreateUri(path: string, queryValues: Map<string, string>): URI {
@@ -24,7 +35,7 @@ function doCreateUri(path: string, queryValues: Map<string, string>): URI {
 				query = '';
 			}
 
-			const prefix = (index++ === 0) ? '' : '&';
+			const prefix = index++ === 0 ? '' : '&';
 			query += `${prefix}${key}=${encodeURIComponent(value)}`;
 		});
 	}
@@ -39,7 +50,6 @@ interface ICredential {
 }
 
 class LocalStorageCredentialsProvider implements ICredentialsProvider {
-
 	static readonly CREDENTIALS_OPENED_KEY = 'credentials.provider';
 
 	private readonly authService: string | undefined;
@@ -48,7 +58,9 @@ class LocalStorageCredentialsProvider implements ICredentialsProvider {
 	private get credentials(): ICredential[] {
 		if (!this._credentials) {
 			try {
-				const serializedCredentials = window.localStorage.getItem(LocalStorageCredentialsProvider.CREDENTIALS_OPENED_KEY);
+				const serializedCredentials = window.localStorage.getItem(
+					LocalStorageCredentialsProvider.CREDENTIALS_OPENED_KEY,
+				);
 				if (serializedCredentials) {
 					this._credentials = JSON.parse(serializedCredentials);
 				}
@@ -65,7 +77,10 @@ class LocalStorageCredentialsProvider implements ICredentialsProvider {
 	}
 
 	private save(): void {
-		window.localStorage.setItem(LocalStorageCredentialsProvider.CREDENTIALS_OPENED_KEY, JSON.stringify(this.credentials));
+		window.localStorage.setItem(
+			LocalStorageCredentialsProvider.CREDENTIALS_OPENED_KEY,
+			JSON.stringify(this.credentials),
+		);
 	}
 
 	async getPassword(service: string, account: string): Promise<string | null> {
@@ -120,7 +135,7 @@ class LocalStorageCredentialsProvider implements ICredentialsProvider {
 	private async doDeletePassword(service: string, account: string): Promise<boolean> {
 		let found = false;
 
-		this._credentials = this.credentials.filter(credential => {
+		this._credentials = this.credentials.filter((credential) => {
 			if (credential.service === service && credential.account === account) {
 				found = true;
 
@@ -141,9 +156,9 @@ class LocalStorageCredentialsProvider implements ICredentialsProvider {
 		return this.doGetPassword(service);
 	}
 
-	async findCredentials(service: string): Promise<Array<{ account: string, password: string }>> {
+	async findCredentials(service: string): Promise<Array<{ account: string; password: string }>> {
 		return this.credentials
-			.filter(credential => credential.service === service)
+			.filter((credential) => credential.service === service)
 			.map(({ account, password }) => ({ account, password }));
 	}
 
@@ -152,16 +167,18 @@ class LocalStorageCredentialsProvider implements ICredentialsProvider {
 		queryValues.set('logout', String(true));
 		queryValues.set('service', service);
 
-		await request({
-			url: doCreateUri('/auth/logout', queryValues).toString(true)
-		}, CancellationToken.None);
+		await request(
+			{
+				url: doCreateUri('/auth/logout', queryValues).toString(true),
+			},
+			CancellationToken.None,
+		);
 	}
 }
 
 class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvider {
-
-	static readonly FETCH_INTERVAL = 500; 			// fetch every 500ms
-	static readonly FETCH_TIMEOUT = 5 * 60 * 1000; 	// ...but stop after 5min
+	static readonly FETCH_INTERVAL = 500; // fetch every 500ms
+	static readonly FETCH_TIMEOUT = 5 * 60 * 1000; // ...but stop after 5min
 
 	static readonly QUERY_KEYS = {
 		REQUEST_ID: 'vscode-requestId',
@@ -169,7 +186,7 @@ class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvi
 		AUTHORITY: 'vscode-authority',
 		PATH: 'vscode-path',
 		QUERY: 'vscode-query',
-		FRAGMENT: 'vscode-fragment'
+		FRAGMENT: 'vscode-fragment',
 	};
 
 	private readonly _onCallback = this._register(new Emitter<URI>());
@@ -181,7 +198,15 @@ class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvi
 		const requestId = generateUuid();
 		queryValues.set(PollingURLCallbackProvider.QUERY_KEYS.REQUEST_ID, requestId);
 
-		const { scheme, authority, path, query, fragment } = options ? options : { scheme: undefined, authority: undefined, path: undefined, query: undefined, fragment: undefined };
+		const { scheme, authority, path, query, fragment } = options
+			? options
+			: {
+					scheme: undefined,
+					authority: undefined,
+					path: undefined,
+					query: undefined,
+					fragment: undefined,
+			  };
 
 		if (scheme) {
 			queryValues.set(PollingURLCallbackProvider.QUERY_KEYS.SCHEME, scheme);
@@ -210,14 +235,16 @@ class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvi
 	}
 
 	private async periodicFetchCallback(requestId: string, startTime: number): Promise<void> {
-
 		// Ask server for callback results
 		const queryValues: Map<string, string> = new Map();
 		queryValues.set(PollingURLCallbackProvider.QUERY_KEYS.REQUEST_ID, requestId);
 
-		const result = await request({
-			url: doCreateUri('/fetch-callback', queryValues).toString(true)
-		}, CancellationToken.None);
+		const result = await request(
+			{
+				url: doCreateUri('/fetch-callback', queryValues).toString(true),
+			},
+			CancellationToken.None,
+		);
 
 		// Check for callback results
 		const content = await streamToBuffer(result.stream);
@@ -233,13 +260,15 @@ class PollingURLCallbackProvider extends Disposable implements IURLCallbackProvi
 
 		// Continue fetching unless we hit the timeout
 		if (Date.now() - startTime < PollingURLCallbackProvider.FETCH_TIMEOUT) {
-			setTimeout(() => this.periodicFetchCallback(requestId, startTime), PollingURLCallbackProvider.FETCH_INTERVAL);
+			setTimeout(
+				() => this.periodicFetchCallback(requestId, startTime),
+				PollingURLCallbackProvider.FETCH_INTERVAL,
+			);
 		}
 	}
 }
 
 class WindowIndicator implements IWindowIndicator {
-
 	readonly onDidChange = Event.None;
 
 	readonly label: string;
@@ -265,27 +294,44 @@ class WindowIndicator implements IWindowIndicator {
 
 		// Repo
 		if (repositoryName && repositoryOwner) {
-			this.label = localize('playgroundLabelRepository', "$(remote) VS Code Web Playground: {0}/{1}", repositoryOwner, repositoryName);
-			this.tooltip = localize('playgroundRepositoryTooltip', "VS Code Web Playground: {0}/{1}", repositoryOwner, repositoryName);
+			this.label = localize(
+				'playgroundLabelRepository',
+				'$(remote) VS Code Web Playground: {0}/{1}',
+				repositoryOwner,
+				repositoryName,
+			);
+			this.tooltip = localize(
+				'playgroundRepositoryTooltip',
+				'VS Code Web Playground: {0}/{1}',
+				repositoryOwner,
+				repositoryName,
+			);
 		}
 
 		// No Repo
 		else {
-			this.label = localize('playgroundLabel', "$(remote) VS Code Web Playground");
-			this.tooltip = localize('playgroundTooltip', "VS Code Web Playground");
+			this.label = localize('playgroundLabel', '$(remote) VS Code Web Playground');
+			this.tooltip = localize('playgroundTooltip', 'VS Code Web Playground');
 		}
 	}
 }
 
-
-function createVSCode(dom: HTMLElement, options) {
+export function createVSCode(dom: HTMLElement, options) {
 	// Find config by checking for DOM
 	const configElement = document.getElementById('vscode-workbench-web-configuration');
-	const configElementAttribute = configElement ? configElement.getAttribute('data-settings') : undefined;
-	const config: IWorkbenchConstructionOptions = configElementAttribute ? JSON.parse(configElementAttribute) : {};
+	const configElementAttribute = configElement
+		? configElement.getAttribute('data-settings')
+		: undefined;
+	const config: IWorkbenchConstructionOptions = configElementAttribute
+		? JSON.parse(configElementAttribute)
+		: {};
 
 	// Find workspace to open and payload
-	let { workspace, payload, options: argOptions }: { workspace: IWorkspace; payload: any; options: { logLevel?: string; } } = parseArgs();
+	let {
+		workspace,
+		payload,
+		options: argOptions,
+	}: { workspace: IWorkspace; payload: any; options: { logLevel?: string } } = parseArgs();
 
 	// Workspace Provider
 	const workspaceProvider = new WorkspaceProvider(workspace, payload);
@@ -294,7 +340,7 @@ function createVSCode(dom: HTMLElement, options) {
 	const homeIndicator: IHomeIndicator = {
 		href: 'https://github.com/microsoft/vscode',
 		icon: 'code',
-		title: localize('home', "Home")
+		title: localize('home', 'Home'),
 	};
 
 	// Window indicator (unless connected to a remote)
@@ -327,47 +373,41 @@ function createVSCode(dom: HTMLElement, options) {
 
 	// TODO(ak) secure by using external endpoint
 	const webWorkerExtensionEndpoint = new URL(window.location.href);
-	webWorkerExtensionEndpoint.pathname = `/src/vs/workbench/services/extensions/worker/${window.location.protocol === 'https:' ? 'https' : 'http'}WebWorkerExtensionHostIframe.html`;
+	webWorkerExtensionEndpoint.pathname = `/src/vs/workbench/services/extensions/worker/${
+		window.location.protocol === 'https:' ? 'https' : 'http'
+	}WebWorkerExtensionHostIframe.html`;
 	webWorkerExtensionEndpoint.search = '';
 
 	return create(dom, {
 		webviewEndpoint: webviewEndpoint.href,
 		webWorkerExtensionHostIframeSrc: webWorkerExtensionEndpoint.href,
-		remoteAuthority,
-		webSocketFactory: {
-			create: url => {
-				const codeServerUrl = new URL(url);
-				codeServerUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-				let webSocket = new FakeWebSocket(codeServerUrl.toString());
-				return webSocket;
-			}
-		},
-		resourceUriProvider: uri => {
-			console.log('resource uri provicer uri', uri)
+
+		resourceUriProvider: (uri) => {
+			console.log('resource uri provicer uri', uri);
 			return URI.from({
 				scheme: location.protocol === 'https:' ? 'https' : 'http',
 				authority: remoteAuthority,
 				path: `/vscode-remote-resource`,
-				query: `path=${encodeURIComponent(uri.path)}`
+				query: `path=${encodeURIComponent(uri.path)}`,
 			});
 		},
 		developmentOptions: {
 			logLevel: argOptions.logLevel ? parseLogLevel(argOptions.logLevel) : undefined,
-			...config.developmentOptions
+			...config.developmentOptions,
 		},
 		homeIndicator,
 		windowIndicator,
 		productQualityChangeHandler,
 		workspaceProvider,
 		urlCallbackProvider: new PollingURLCallbackProvider(),
-		credentialsProvider: new LocalStorageCredentialsProvider()
+		credentialsProvider: new LocalStorageCredentialsProvider(),
 	});
 }
 
-createVSCode(document.body, {});
+// createVSCode(document.body, {});
 
 class FakeWebSocket extends Disposable implements IWebSocket {
-	private readonly _onData: Emitter<ArrayBuffer> = new Emitter<ArrayBuffer>();;
+	private readonly _onData: Emitter<ArrayBuffer> = new Emitter<ArrayBuffer>();
 	private readonly _onOpen: Emitter<void> = new Emitter<void>();
 	private readonly _onClose: Emitter<void> = new Emitter<void>();
 	private readonly _onMessage: Emitter<string> = new Emitter<string>();
@@ -380,7 +420,7 @@ class FakeWebSocket extends Disposable implements IWebSocket {
 	public readonly onError: Event<Error> = this._onError.event;
 
 	constructor(public url: string) {
-		super()
+		super();
 	}
 
 	public send(data: ArrayBuffer | ArrayBufferView): void {
@@ -397,13 +437,12 @@ function parseArgs() {
 	let workspace: IWorkspace;
 	let payload = Object.create(null);
 	let options = {
-		logLevel: undefined as string | undefined
+		logLevel: undefined as string | undefined,
 	};
 
 	const query = new URL(document.location.href).searchParams;
 	query.forEach((value, key) => {
 		switch (key) {
-
 			// Folder
 			case WorkspaceProvider.QUERY_PARAM_FOLDER:
 				workspace = { folderUri: URI.parse(value) };
@@ -436,4 +475,3 @@ function parseArgs() {
 	});
 	return { workspace, payload, options };
 }
-

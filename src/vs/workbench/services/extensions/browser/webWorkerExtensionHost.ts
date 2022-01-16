@@ -269,6 +269,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 
 
 				} else if (data?.type === '_newWorker') {
+					debugger;
 					// receiving a message to create a new nested/child worker
 					const worker = new Worker((ttPolicyNestedWorker?.createScriptURL(data.url) ?? data.url) as string, data.options);
 					worker.postMessage(data.port, [data.port]);

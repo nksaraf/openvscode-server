@@ -6,9 +6,7 @@
 (function () {
 	const MonacoEnvironment = (<any>self).MonacoEnvironment;
 	const monacoBaseUrl =
-		MonacoEnvironment && MonacoEnvironment.baseUrl
-			? MonacoEnvironment.baseUrl
-			: '../../../';
+		MonacoEnvironment && MonacoEnvironment.baseUrl ? MonacoEnvironment.baseUrl : '../../../';
 
 	// const trustedTypesPolicy =
 	// 	typeof self.trustedTypes?.createPolicy === "function"
@@ -40,18 +38,15 @@
 	const loadCode = function (moduleId: string) {
 		import('./' + monacoBaseUrl + moduleId + '.ts')
 			.then((ws) => {
-				let messageHandler = ws.create(
-					(msg: any, transfer?: Transferable[]) => {
-						(<any>self).postMessage(msg, transfer);
-					},
-					null
-				);
+				let messageHandler = ws.create((msg: any, transfer?: Transferable[]) => {
+					(<any>self).postMessage(msg, transfer);
+				}, null);
 				self.onmessage = (e: MessageEvent) => messageHandler.onmessage(e.data);
 				while (beforeReadyMessages.length > 0) {
 					self.onmessage(beforeReadyMessages.shift()!);
 				}
 			})
-			.catch(console.error);
+			.catch(console.log);
 	};
 
 	// import(monacoBaseUrl + "/" + moduleId)

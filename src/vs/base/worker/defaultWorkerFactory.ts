@@ -9,6 +9,7 @@ import { IWorker, IWorkerCallback, IWorkerFactory, logOnceWebWorkerWarning } fro
 const ttPolicy = window.trustedTypes?.createPolicy('defaultWorkerFactory', { createScriptURL: value => value });
 
 function getWorker(workerId: string, label: string): Worker | Promise<Worker> {
+	console.log(`Creating web worker ${label}`);
 	if (workerId === 'workerMain.js') {
 		return import('./worker?worker')
 			.then(({ default: MainWorker }) => new MainWorker());

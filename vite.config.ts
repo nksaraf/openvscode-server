@@ -2,12 +2,12 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import path from 'path';
+import path from 'path-browserify';
 import { Alias, defineConfig } from 'vite';
 import resolve from '@rollup/plugin-node-resolve';
 
 let basePath = path.resolve(__dirname);
-console.log(basePath)
+console.log(basePath);
 
 export default defineConfig({
 	// publicDir: 'src',
@@ -39,17 +39,22 @@ export default defineConfig({
 		rollupOptions: {
 			input: {
 				index: path.resolve(__dirname, 'index.html'),
-				webExtensionHost: path.resolve(__dirname, 'src/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html'),
-			}
-		}
+				webExtensionHost: path.resolve(
+					__dirname,
+					'src/vs/workbench/services/extensions/worker/httpWebWorkerExtensionHostIframe.html',
+				),
+			},
+		},
 	},
 
 	resolve: {
 		alias: [
 			{
-				find: /^vs\/css\!(.*)/, replacement: '$1.css', customResolver: resolve({
+				find: /^vs\/css\!(.*)/,
+				replacement: '$1.css',
+				customResolver: resolve({
 					extensions: ['.css'],
-				})
+				}),
 			},
 			{ find: 'vs/base/common/marked/marked', replacement: 'marked' },
 			{ find: 'vs/base/browser/dompurify/dompurify', replacement: 'dompurify' },
@@ -57,5 +62,4 @@ export default defineConfig({
 			{ find: 'vs', replacement: path.resolve(__dirname, 'src/vs') },
 		] as Alias[],
 	},
-
 });

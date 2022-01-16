@@ -14,9 +14,9 @@
  */
 function factory(path: path.PlatformPath, os: typeof import('os'), productName: any, cwd: string) {
 	/**
- * @param cliArgs
- * @returns
- */
+	 * @param cliArgs
+	 * @returns
+	 */
 	function getUserDataPath(cliArgs: any) {
 		const userDataPath = doGetUserDataPath(cliArgs);
 		const pathsToResolve = [userDataPath];
@@ -35,10 +35,10 @@ function factory(path: path.PlatformPath, os: typeof import('os'), productName: 
 	}
 
 	/**
- * @param cliArgs
- * @returns
- */
-	function doGetUserDataPath(cliArgs: { [x: string]: any; }) {
+	 * @param cliArgs
+	 * @returns
+	 */
+	function doGetUserDataPath(cliArgs: { [x: string]: any }) {
 		// 1. Support portable mode
 		const portablePath = process.env['VSCODE_PORTABLE'];
 		if (portablePath) {
@@ -67,9 +67,7 @@ function factory(path: path.PlatformPath, os: typeof import('os'), productName: 
 				if (!appDataPath) {
 					const userProfile = process.env['USERPROFILE'];
 					if (typeof userProfile !== 'string') {
-						throw new Error(
-							'Windows: Unexpected undefined %USERPROFILE% environment variable'
-						);
+						throw new Error('Windows: Unexpected undefined %USERPROFILE% environment variable');
 					}
 
 					appDataPath = path.join(userProfile, 'AppData', 'Roaming');
@@ -79,8 +77,7 @@ function factory(path: path.PlatformPath, os: typeof import('os'), productName: 
 				appDataPath = path.join(os.homedir(), 'Library', 'Application Support');
 				break;
 			case 'linux':
-				appDataPath =
-					process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config');
+				appDataPath = process.env['XDG_CONFIG_HOME'] || path.join(os.homedir(), '.config');
 				break;
 			default:
 				throw new Error('Platform not supported');
@@ -94,7 +91,7 @@ function factory(path: path.PlatformPath, os: typeof import('os'), productName: 
 	};
 }
 
-import * as path from 'path';
+import * as path from 'path-browserify';
 import * as os from 'os';
 // import * as network from 'vs/base/common/network';
 // import * as resources from 'vs/base/common/resources';

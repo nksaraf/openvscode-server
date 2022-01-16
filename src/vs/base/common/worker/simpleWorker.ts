@@ -31,7 +31,9 @@ export function logOnceWebWorkerWarning(err: any): void {
 	}
 	if (!webWorkerWarningLogged) {
 		webWorkerWarningLogged = true;
-		console.warn('Could not create web worker(s). Falling back to loading web worker code in main thread, which might cause UI freezes. Please see https://github.com/microsoft/monaco-editor#faq');
+		console.warn(
+			'Could not create web worker(s). Falling back to loading web worker code in main thread, which might cause UI freezes. Please see https://github.com/microsoft/monaco-editor#faq',
+		);
 	}
 	console.warn(err.message);
 }
@@ -65,10 +67,9 @@ interface IMessageHandler {
 }
 
 class SimpleWorkerProtocol {
-
 	private _workerId: number;
 	private _lastSentReq: number;
-	private _pendingReplies: { [req: string]: IMessageReply; };
+	private _pendingReplies: { [req: string]: IMessageReply };
 	private _handler: IMessageHandler;
 
 	constructor(handler: IMessageHandler) {
@@ -87,13 +88,13 @@ class SimpleWorkerProtocol {
 		return new Promise<any>((resolve, reject) => {
 			this._pendingReplies[req] = {
 				resolve: resolve,
-				reject: reject
+				reject: reject,
 			};
 			this._send({
 				vsWorker: this._workerId,
 				req: req,
 				method: method,
-				args: args
+				args: args,
 			});
 		});
 	}
@@ -138,25 +139,28 @@ class SimpleWorkerProtocol {
 		let requestMessage = <IRequestMessage>msg;
 		let req = requestMessage.req;
 		let result = this._handler.handleMessage(requestMessage.method, requestMessage.args);
-		result.then((r) => {
-			this._send({
-				vsWorker: this._workerId,
-				seq: req,
-				res: r,
-				err: undefined
-			});
-		}, (e) => {
-			if (e.detail instanceof Error) {
-				// Loading errors have a detail property that points to the actual error
-				e.detail = transformErrorForSerialization(e.detail);
-			}
-			this._send({
-				vsWorker: this._workerId,
-				seq: req,
-				res: undefined,
-				err: transformErrorForSerialization(e)
-			});
-		});
+		result.then(
+			(r) => {
+				this._send({
+					vsWorker: this._workerId,
+					seq: req,
+					res: r,
+					err: undefined,
+				});
+			},
+			(e) => {
+				if (e.detail instanceof Error) {
+					// Loading errors have a detail property that points to the actual error
+					e.detail = transformErrorForSerialization(e.detail);
+				}
+				this._send({
+					vsWorker: this._workerId,
+					seq: req,
+					res: undefined,
+					err: transformErrorForSerialization(e),
+				});
+			},
+		);
 	}
 
 	private _send(msg: IRequestMessage | IReplyMessage): void {
@@ -186,8 +190,10 @@ export interface IWorkerClient<W> {
 /**
  * Main thread side
  */
-export class SimpleWorkerClient<W extends object, H extends object> extends Disposable implements IWorkerClient<W> {
-
+export class SimpleWorkerClient<W extends object, H extends object>
+	extends Disposable
+	implements IWorkerClient<W>
+{
 	private readonly _worker: IWorker;
 	private readonly _onModuleLoaded: Promise<string[]>;
 	private readonly _protocol: SimpleWorkerProtocol;
@@ -198,19 +204,21 @@ export class SimpleWorkerClient<W extends object, H extends object> extends Disp
 
 		let lazyProxyReject: ((err: any) => void) | null = null;
 
-		this._worker = this._register(workerFactory.create(
-			'vs/base/common/worker/simpleWorker',
-			(msg: any) => {
-				this._protocol.handleMessage(msg);
-			},
-			(err: any) => {
-				// in Firefox, web workers fail lazily :(
-				// we will reject the proxy
-				if (lazyProxyReject) {
-					lazyProxyReject(err);
-				}
-			}
-		));
+		this._worker = this._register(
+			workerFactory.create(
+				'vs/base/common/worker/simpleWorker',
+				(msg: any) => {
+					this._protocol.handleMessage(msg);
+				},
+				(err: any) => {
+					// in Firefox, web workers fail lazily :(
+					// we will reject the proxy
+					if (lazyProxyReject) {
+						lazyProxyReject(err);
+					}
+				},
+			),
+		);
 
 		this._protocol = new SimpleWorkerProtocol({
 			sendMessage: (msg: any, transfer: ArrayBuffer[]): void => {
@@ -226,13 +234,16 @@ export class SimpleWorkerClient<W extends object, H extends object> extends Disp
 				} catch (e) {
 					return Promise.reject(e);
 				}
-			}
+			},
 		});
 		this._protocol.setWorkerId(this._worker.getId());
 
 		// Gather loader configuration
 		let loaderConfiguration: any = null;
-		if (typeof (<any>self).require !== 'undefined' && typeof (<any>self).require.getConfig === 'function') {
+		if (
+			typeof (<any>self).require !== 'undefined' &&
+			typeof (<any>self).require.getConfig === 'function'
+		) {
 			// Get the configuration from the Monaco AMD Loader
 			loaderConfiguration = (<any>self).require.getConfig();
 		} else if (typeof (<any>self).requirejs !== 'undefined') {
@@ -257,12 +268,15 @@ export class SimpleWorkerClient<W extends object, H extends object> extends Disp
 
 		this._lazyProxy = new Promise<W>((resolve, reject) => {
 			lazyProxyReject = reject;
-			this._onModuleLoaded.then((availableMethods: string[]) => {
-				resolve(types.createProxyObject<W>(availableMethods, proxyMethodRequest));
-			}, (e) => {
-				reject(e);
-				this._onError('Worker failed to load ' + moduleId, e);
-			});
+			this._onModuleLoaded.then(
+				(availableMethods: string[]) => {
+					resolve(types.createProxyObject<W>(availableMethods, proxyMethodRequest));
+				},
+				(e) => {
+					reject(e);
+					this._onError('Worker failed to load ' + moduleId, e);
+				},
+			);
 		});
 	}
 
@@ -297,19 +311,22 @@ export interface IRequestHandlerFactory<H> {
  * Worker side
  */
 export class SimpleWorkerServer<H extends object> {
-
 	private _requestHandlerFactory: IRequestHandlerFactory<H> | null;
 	private _requestHandler: IRequestHandler | null;
 	private _protocol: SimpleWorkerProtocol;
 
-	constructor(postMessage: (msg: any, transfer?: ArrayBuffer[]) => void, requestHandlerFactory: IRequestHandlerFactory<H> | null) {
+	constructor(
+		postMessage: (msg: any, transfer?: ArrayBuffer[]) => void,
+		requestHandlerFactory: IRequestHandlerFactory<H> | null,
+	) {
 		this._requestHandlerFactory = requestHandlerFactory;
 		this._requestHandler = null;
 		this._protocol = new SimpleWorkerProtocol({
 			sendMessage: (msg: any, transfer: ArrayBuffer[]): void => {
 				postMessage(msg, transfer);
 			},
-			handleMessage: (method: string, args: any[]): Promise<any> => this._handleMessage(method, args)
+			handleMessage: (method: string, args: any[]): Promise<any> =>
+				this._handleMessage(method, args),
 		});
 	}
 
@@ -333,7 +350,12 @@ export class SimpleWorkerServer<H extends object> {
 		}
 	}
 
-	private async initialize(workerId: number, loaderConfig: any, moduleId: string, hostMethods: string[]): Promise<string[]> {
+	private async initialize(
+		workerId: number,
+		loaderConfig: any,
+		moduleId: string,
+		hostMethods: string[],
+	): Promise<string[]> {
 		this._protocol.setWorkerId(workerId);
 
 		const proxyMethodRequest = (method: string, args: any[]): Promise<any> => {
@@ -369,7 +391,9 @@ export class SimpleWorkerServer<H extends object> {
 		}
 
 		console.log('loading ' + moduleId + ' ...');
-		let mod: { create: IRequestHandlerFactory<H> } = await import(`./../../../../${moduleId}.ts`);
+		let id = moduleId.replace(/^vs\//, '');
+
+		let mod: { create: IRequestHandlerFactory<H> } = await import('vs/' + id);
 		this._requestHandler = mod.create(hostProxy);
 
 		if (!this._requestHandler) {
